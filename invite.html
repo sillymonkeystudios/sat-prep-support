@@ -1,0 +1,134 @@
+<!-- public/invite.html -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Join Leaderboard on SatUP!</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+      .container {
+        background: white;
+        color: #333;
+        border-radius: 20px;
+        padding: 40px;
+        max-width: 400px;
+        width: 100%;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        text-align: center;
+      }
+      h1 {
+        margin: 0 0 10px 0;
+        font-size: 24px;
+      }
+      .inviter {
+        color: #666;
+        margin-bottom: 30px;
+      }
+      .buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .button {
+        padding: 14px 24px;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: transform 0.2s;
+      }
+      .button:active {
+        transform: scale(0.98);
+      }
+      .button-primary {
+        background: #667eea;
+        color: white;
+      }
+      .button-secondary {
+        background: #f0f0f0;
+        color: #333;
+      }
+      .logo {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 20px;
+        background: #667eea;
+        border-radius: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="logo"></div>
+      <h1 id="leaderboard-name">Loading...</h1>
+      <p class="inviter" id="inviter-text"></p>
+
+      <div class="buttons">
+        <a href="#" id="open-app-button" class="button button-primary">
+          Open in SatUP! App
+        </a>
+        <a href="#" id="app-store-button" class="button button-secondary">
+          Download App
+        </a>
+      </div>
+    </div>
+
+    <script>
+      // Parse URL parameters
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get("token");
+      const name = params.get("name");
+      const inviter = params.get("inviter");
+
+      // Display info
+      if (name && inviter) {
+        document.getElementById(
+          "leaderboard-name"
+        ).textContent = `Join "${name}"`;
+        document.getElementById(
+          "inviter-text"
+        ).textContent = `${inviter} invited you to join this leaderboard`;
+      } else {
+        document.getElementById("leaderboard-name").textContent =
+          "Invalid invite link";
+        document.getElementById("inviter-text").textContent = "";
+      }
+
+      // Deep link
+      const deepLink = `satup://invite?token=${token || ""}`;
+      document.getElementById("open-app-button").href = deepLink;
+
+      // App Store links (update with your actual app store URLs)
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const appStoreUrl = isIOS
+        ? "https://apps.apple.com/app/satup" // Update with your App Store URL
+        : "https://play.google.com/store/apps/details?id=com.sillymonkeystudios.satup";
+
+      document.getElementById("app-store-button").href = appStoreUrl;
+
+      // Try to open app automatically after 2 seconds
+      setTimeout(() => {
+        window.location.href = deepLink;
+        // If app doesn't open, fallback to app store after 1 more second
+        setTimeout(() => {
+          if (document.hasFocus()) {
+            // App didn't open, redirect to app store
+            window.location.href = appStoreUrl;
+          }
+        }, 1000);
+      }, 2000);
+    </script>
+  </body>
+</html>
