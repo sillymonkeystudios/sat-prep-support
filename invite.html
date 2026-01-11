@@ -67,6 +67,50 @@
         border-radius: 20px;
         object-fit: contain;
       }
+      .desktop-message {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        color: #666;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      .desktop-message strong {
+        color: #333;
+        display: block;
+        margin-bottom: 8px;
+      }
+      .qr-code {
+        width: 200px;
+        height: 200px;
+        margin: 15px auto;
+        border: 4px solid #f0f0f0;
+        border-radius: 10px;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .qr-code img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      .desktop-only {
+        display: none;
+      }
+      .mobile-only {
+        display: block;
+      }
+      @media (min-width: 768px) {
+        .desktop-only {
+          display: block !important;
+        }
+        .mobile-only {
+          display: none !important;
+        }
+      }
     </style>
   </head>
   <body>
@@ -75,12 +119,26 @@
       <h1 id="leaderboard-name">Loading...</h1>
       <p class="inviter" id="inviter-text"></p>
 
+      <div class="desktop-only">
+        <div class="desktop-message">
+          <strong>📱 Open this link on your iPhone</strong>
+          Scan the QR code below with your iPhone camera to open this invite in the SatUP! app, or copy the link and open it on your iOS device.
+        </div>
+        <div class="qr-code" id="qr-code">
+          <img id="qr-image" src="" alt="QR Code" />
+        </div>
+      </div>
+
       <div class="buttons">
-        <a href="#" id="open-app-button" class="button button-primary">
+        <a href="#" id="open-app-button" class="button button-primary mobile-only">
           Open in SatUP! App
         </a>
         <a href="#" id="app-store-button" class="button button-secondary">
-          Download App
+          <span class="mobile-only">Download App</span>
+          <span class="desktop-only">View on App Store</span>
+        </a>
+        <a href="#" id="copy-link-button" class="button button-secondary desktop-only">
+          Copy Invite Link
         </a>
       </div>
     </div>
@@ -110,19 +168,51 @@
       const deepLink = `satup://invite?token=${token || ""}`;
       document.getElementById("open-app-button").href = deepLink;
 
-      // App Store link (iOS only)
+      // Detect device type
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      const appStoreUrl = "https://apps.apple.com/us/app/satup/id6757409537";
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const isDesktop = !isMobile;
 
-      // Only show download button on iOS devices
-      if (isIOS) {
-        document.getElementById("app-store-button").href = appStoreUrl;
-      } else {
-        // Hide download button for non-iOS devices
-        document.getElementById("app-store-button").style.display = "none";
+      // App Store link
+      const appStoreUrl = "https://apps.apple.com/us/app/satup/id6757409537";
+      document.getElementById("app-store-button").href = appStoreUrl;
+
+      // Desktop-specific features
+      if (isDesktop) {
+        // Generate QR code for the current invite URL
+        const currentUrl = window.location.href;
+        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(currentUrl)}`;
+        document.getElementById("qr-image").src = qrCodeUrl;
+
+        // Copy link functionality
+        document.getElementById("copy-link-button").addEventListener("click", (e) => {
+          e.preventDefault();
+          navigator.clipboard.writeText(currentUrl).then(() => {
+            const button = e.target;
+            const originalText = button.textContent;
+            button.textContent = "✓ Link Copied!";
+            setTimeout(() => {
+              button.textContent = originalText;
+            }, 2000);
+          }).catch(() => {
+            // Fallback for older browsers
+            const textArea = document.createElement("textarea");
+            textArea.value = currentUrl;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand("copy");
+            document.body.removeChild(textArea);
+            const button = e.target;
+            const originalText = button.textContent;
+            button.textContent = "✓ Link Copied!";
+            setTimeout(() => {
+              button.textContent = originalText;
+            }, 2000);
+          });
+        });
       }
 
-      // Try to open app automatically after 2 seconds (iOS only)
+      // Mobile behavior: try to open app automatically (iOS only)
       if (isIOS) {
         setTimeout(() => {
           window.location.href = deepLink;
