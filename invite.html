@@ -153,28 +153,66 @@
     </div>
 
     <script>
-      // Parse URL parameters
+      // Supabase configuration
+      const SUPABASE_URL = "https://hixwqdbhxnwhgbqeqpcu.supabase.co";
+      const SUPABASE_ANON_KEY =
+        "sb_publishable_PT13A5qk3rJJyxjpkoxL5g_5dWZSTcL";
+
+      // Parse token from URL
       const params = new URLSearchParams(window.location.search);
       const token = params.get("token");
-      const name = params.get("name");
-      const inviter = params.get("inviter");
 
-      // Display info
-      if (name && inviter) {
-        document.getElementById(
-          "leaderboard-name"
-        ).textContent = `Join "${name}"`;
-        document.getElementById(
-          "inviter-text"
-        ).textContent = `${inviter} invited you to join this leaderboard`;
-      } else {
+      // Deep link (set early for QR code generation)
+      const deepLink = token ? `satup://invite?token=${token}` : "";
+
+      if (!token) {
         document.getElementById("leaderboard-name").textContent =
           "Invalid invite link";
-        document.getElementById("inviter-text").textContent = "";
+        document.getElementById("inviter-text").textContent =
+          "This invite link is missing the token.";
+        document.getElementById("open-app-button").style.display = "none";
+      } else {
+        // Fetch token info from database
+        fetch(`${SUPABASE_URL}/rest/v1/rpc/get_invite_token_info`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({ p_token: token }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data && data.length > 0 && data[0].is_valid) {
+              const info = data[0];
+              document.getElementById(
+                "leaderboard-name"
+              ).textContent = `Join "${info.leaderboard_name}"`;
+              document.getElementById(
+                "inviter-text"
+              ).textContent = `${info.inviter_username} invited you to join this leaderboard.`;
+
+              // Set deep link
+              document.getElementById("open-app-button").href = deepLink;
+            } else {
+              document.getElementById("leaderboard-name").textContent =
+                "Invalid or expired invite link";
+              document.getElementById("inviter-text").textContent =
+                "This invite link is invalid or has expired.";
+              document.getElementById("open-app-button").style.display = "none";
+            }
+          })
+          .catch((error) => {
+            console.error("Error fetching invite info:", error);
+            document.getElementById("leaderboard-name").textContent =
+              "Error loading invite";
+            document.getElementById("inviter-text").textContent =
+              "Unable to load invite information.";
+            document.getElementById("open-app-button").style.display = "none";
+          });
       }
 
-      // Deep link
-      const deepLink = `satup://invite?token=${token || ""}`;
+      // Set deep link for button (even if token is missing, for QR code)
       document.getElementById("open-app-button").href = deepLink;
 
       // Detect device type
